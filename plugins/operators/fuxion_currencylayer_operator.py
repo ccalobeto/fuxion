@@ -93,10 +93,10 @@ class FuxionApiToMsSqlOperator(BaseOperator):
         df = df_.reset_index()[['date', 'index', 'quotes']]
 
         # clean data
-        df.rename(columns={'date': 'Fecha', 'index': 'CodigoMoneda', 'quotes': 'TipoDeCambio'}, inplace=True)
+        df.rename(columns={'date': 'FechaCreacion', 'index': 'CodigoMoneda', 'quotes': 'TipoDeCambio'}, inplace=True)
         df['CodigoMoneda'] = df['CodigoMoneda'].str[-3:]
         df['CodigoMoneda'] = df['CodigoMoneda'].str.lower()
-        df['FechaActualizacion'] = datetime.now()
+        df['FechaProcesoETL'] = datetime.utcnow()
         # currency from El Salvador is USD: change the value and the currency name collected from api
         index = df.index
         df.loc[index[df['CodigoMoneda'] == 'svc'][0], 'TipoDeCambio'] = df.loc[
@@ -109,8 +109,8 @@ class FuxionApiToMsSqlOperator(BaseOperator):
         df = df.append(df_new).reset_index(drop=True)
 
         # Format the python datetime dtype to MSSQL datetime type
-        df['Fecha'] = df['Fecha'].dt.strftime('%Y-%m-%d %H:%M:%S')
-        df['FechaActualizacion'] = df['FechaActualizacion'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        df['FechaCreacion'] = df['FechaCreacion'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        df['FechaProcesoETL'] = df['FechaProcesoETL'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
         tuplas = [tuple(x) for x in df.values.tolist()]
         return tuplas

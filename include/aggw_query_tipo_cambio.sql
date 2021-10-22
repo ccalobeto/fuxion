@@ -7,18 +7,18 @@ WHERE SemanaFuxionID =
     (SELECT PeriodoID
     FROM db_analitycs.dbo.sop_periodos p
     WHERE p.PeriodoTipoID = @PeriodoTipoID
-    AND (p.FechaInicio <= '{{ ds }}') AND (p.FechaFin+1 > '{{ ds }}'))
+    AND (p.FechaInicio <= '{{ ds }}') AND ('{{ ds }}' < p.FechaFin + 1 ))
 
 INSERT INTO db_analitycs.dbo.aggw_tipo_cambio (SemanaFuxionID, CodigoMoneda, ValorPromedio, ValorStd,
-            FechaActualizacion)
+            FechaProcesoResumen)
 
-SELECT slice_p.PeriodoID, CodigoMoneda, AVG(TipoDeCambio) AS ValorPromedio, STDEV(TipoDeCambio) AS ValorStd,
-        GETDATE() as FechaActualizacion
+SELECT slice_p.PeriodoID, CodigoMoneda, AVG(TipoDeCambio) AS ValorPromedio, ISNULL(STDEV(TipoDeCambio), 0) AS ValorStd,
+        GETDATE() as FechaProcesoResumen
 FROM db_analitycs.dbo.etl_tipo_cambio tc
 INNER JOIN
     (SELECT PeriodoID, FechaInicio, FechaFin
     FROM db_analitycs.dbo.sop_periodos p
     WHERE p.PeriodoTipoID = @PeriodoTipoID
-    AND (p.FechaInicio <= '{{ ds }}') AND (p.FechaFin+1 > '{{ ds }}')) slice_p
-ON (tc.Fecha >= slice_p.FechaInicio) AND (tc.Fecha < (slice_p.FechaFin) + 1)
+    AND (p.FechaInicio <= '{{ ds }}') AND ('{{ ds }}' < p.FechaFin + 1 )) slice_p
+ON (slice_p.FechaInicio <= tc.FechaCreacion) AND (tc.FechaCreacion < (slice_p.FechaFin) + 1)
 GROUP BY slice_p.PeriodoID, CodigoMoneda

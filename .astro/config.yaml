@@ -1,2 +1,4 @@
 project:
   name: airflow-developer
+webserver:
+  port: 8081
